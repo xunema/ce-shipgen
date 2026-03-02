@@ -3,9 +3,9 @@
 **CEpheus Engine Ship Generator** - A Progressive Web App for designing starships
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://xunema.github.io/ce-shipgen/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://justinaquino.github.io/ce-shipgen/)
 
-**Live Demo:** https://xunema.github.io/ce-shipgen/
+**Live Demo:** https://justinaquino.github.io/ce-shipgen/
 
 ---
 
@@ -254,7 +254,7 @@ This is an open project following PAD (Procedural-Agentic-Development). The comp
 
 ## 🌐 Links
 
-- **Live App:** https://xunema.github.io/ce-shipgen/
+- **Live App:** https://justinaquino.github.io/ce-shipgen/
 - **Repository:** https://github.com/xunema/ce-shipgen
 - **Game in the Brain:** https://gi7b.org
 - **Wiki:** https://wiki.gi7b.org

@@ -322,7 +322,7 @@ export default function JsonTableEditor({ onDataChange }: JsonEditorProps) {
         </div>
 
         {/* Table or JSON Editor */}
-        {isLoading ? (
+        {isLoading || validationStatus === null ? (
           <div className="p-8 text-center border border-space-600 rounded-lg">
             <div className="animate-pulse text-gray-400">Loading data...</div>
           </div>
