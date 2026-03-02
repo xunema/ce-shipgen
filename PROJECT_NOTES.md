@@ -1604,3 +1604,43 @@ The following session sections now exist in this document:
 *Files modified: 4 (JsonTableEditor.tsx, App.tsx, StartupScreen.tsx, SettingsScreen.tsx)*
 *Docs updated: PRD.md (FR-025, Strategy B/C deferred, milestone table), PROJECT_NOTES.md (this session)*
 *Next milestone: M3 — 19-step Ship Design Wizard, BOQ calculations, real-time validation*
+
+---
+
+## Session 5 Wrap-Up — M2.6 Blocker Identified
+
+**Date:** March 2, 2026 (end of session)
+
+### What Was Found
+
+End-of-session review identified two M2.5 features that are **implemented but not verified working** in the live deployed app:
+
+**1. Standalone "Local" indicator (FR-021b)**
+The "Installed" badge in the header (`isStandalone` state in `App.tsx`) reads from `window.matchMedia('(display-mode: standalone)')` and `navigator.standalone`. This logic is correct in code but has not been tested against the actual installed PWA. The standalone display mode only activates when the app is launched from a home screen / app shortcut — not from the browser address bar even if installed.
+
+**2. Settings Snapshots (FR-024)**
+The `SettingsSnapshots` component is implemented but was not manually tested end-to-end in the browser. The async save flow (fetching default table data for uncustomised tables) and the `key={snapshotVersion}` remount chain have not been confirmed working outside of a build-pass check.
+
+### Why This Matters Before M3
+
+M3 introduces the 19-step ship design wizard with real-time calculations. The snapshot system is meant to let users preserve their table configurations before experimenting with ship designs. If snapshots are broken, users have no recovery path when the calculation engine reads from a corrupted or unexpected table state.
+
+The standalone indicator is lower priority but is part of the FR-021 acceptance criteria that M2.5 claimed to complete.
+
+### M2.6 Checklist (Next Session Start)
+
+Before writing any M3 code:
+- [ ] Open https://xunema.github.io/ce-shipgen/ in Chrome
+- [ ] Click install (or address bar install icon) → launch from app shortcut
+- [ ] Confirm "Installed" green badge appears in header
+- [ ] Confirm badge absent in browser tab
+- [ ] Settings → save a snapshot → reload page → confirm it persists
+- [ ] Load that snapshot → re-select a table → confirm data matches snapshot
+- [ ] Fix anything broken → push → CI deploys → re-verify
+- [ ] Only then: open M3
+
+---
+
+*Session 5 wrap-up written: March 2, 2026*
+*M2.5 status revised: ⚠️ Needs Verification*
+*M2.6 blocker logged in PRD §11.8 and milestone table*

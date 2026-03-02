@@ -993,12 +993,40 @@ Add `husky` + a pre-commit hook running `tsc --noEmit`. The `pwa.d.ts` structura
 |-----------|-------|--------|
 | M1: UI Layout & Tiling | Layout, tiles, focus mode, PWA | ✅ Complete |
 | M2: Settings & Data Tables | JSON + table editors, all 13 tables, rule toggles | ✅ Complete |
-| M2.5: Install UX & Settings System | FR-021 (install), FR-022 (auto-save + reset), FR-023 (security), FR-024 (snapshots), FR-025 (CI/CD) | ✅ Complete |
-| M3: Ship Generation | 19-step wizard, BOQ, real-time calculations | 🎯 Next |
+| M2.5: Install UX & Settings System | FR-021 (install), FR-022 (auto-save + reset), FR-023 (security), FR-024 (snapshots), FR-025 (CI/CD) | ⚠️ Needs Verification |
+| M2.6: Local Signal & Snapshot Fix | FR-021b (standalone indicator confirmed working), FR-024 (snapshots confirmed working in browser) | 🎯 Next — required before M3 |
+| M3: Ship Generation | 19-step wizard, BOQ, real-time calculations | ⏳ Blocked on M2.6 |
 | M4: Persistence & Export | Ship library, JSON/CSV/text/print export | ⏳ Pending |
 
 ---
 
+### 11.8 M2.6 Blocker — Local Signal & Snapshots Verification Required
+
+**Added:** March 2, 2026 (Session 5 wrap-up)
+**Priority:** Critical — must resolve before M3 begins
+
+**Problem Statement:**
+End-of-session manual testing revealed that two M2.5 features are not confirmed working in the live deployed app:
+
+1. **FR-021b — Standalone / "Installed" indicator** ("Local signal")
+   - The header badge showing "Installed" (green dot) when the app is running as a standalone PWA has not been verified in the live environment
+   - The `window.matchMedia('(display-mode: standalone)')` and `navigator.standalone` detection is implemented in code but has not been tested against the actual installed PWA on a real device or Chrome's install flow
+   - Risk: the condition may never be true in practice if the app is not correctly registered as installable, or if the manifest/service worker configuration prevents the standalone display mode from activating
+
+2. **FR-024 — Settings Snapshots**
+   - The snapshots component is implemented but has not been verified working end-to-end in the browser
+   - Specific concerns: async fetch of default table data during snapshot save, the `key={snapshotVersion}` remount triggering correctly after load, localStorage reads/writes at the `ce_shipgen_presets` key
+
+**Required before M3:**
+- [ ] Install the app from https://xunema.github.io/ce-shipgen/ on Chrome desktop
+- [ ] Confirm "Installed" badge appears in header when running in standalone mode
+- [ ] Confirm badge is absent when running in browser tab
+- [ ] Save a snapshot, reload the page, confirm snapshot persists
+- [ ] Load a snapshot, re-select a table, confirm data reflects the loaded snapshot
+- [ ] If either feature is broken: diagnose, fix, redeploy, re-verify before opening M3
+
+---
+
 **PRD Status:** LIVING DOCUMENT — updated per session
-**Last updated:** March 2, 2026 (Session 5)
-**Next implementation target:** M3 — 19-step Ship Design Wizard, BOQ, real-time calculations
+**Last updated:** March 2, 2026 (Session 5 wrap-up)
+**Next implementation target:** M2.6 — Verify and fix Local signal (FR-021b) and Snapshots (FR-024) before M3
