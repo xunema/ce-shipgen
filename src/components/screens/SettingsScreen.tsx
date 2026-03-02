@@ -1,4 +1,6 @@
-import { ArrowLeft, Monitor, Smartphone, Save, RotateCcw, FileJson, Moon, Sun, Laptop } from 'lucide-react'
+import { ArrowLeft, Monitor, Smartphone, Moon, Sun, Laptop } from 'lucide-react'
+import JsonTableEditor from '../settings/JsonTableEditor'
+import RuleSettings from '../settings/RuleSettings'
 
 interface SettingsScreenProps {
   layoutMode: 'desktop' | 'phone'
@@ -23,7 +25,7 @@ export default function SettingsScreen({ layoutMode, onLayoutChange, onBack }: S
 
       {/* Settings Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           
           {/* Layout Settings */}
           <section className="bg-space-800 rounded-xl border border-space-700 overflow-hidden">
@@ -66,51 +68,11 @@ export default function SettingsScreen({ layoutMode, onLayoutChange, onBack }: S
             </div>
           </section>
 
+          {/* Rule Settings */}
+          <RuleSettings />
+
           {/* JSON Table Editor */}
-          <section className="bg-space-800 rounded-xl border border-space-700 overflow-hidden">
-            <div className="p-4 border-b border-space-700">
-              <h3 className="font-semibold text-white">Data Tables</h3>
-              <p className="text-sm text-gray-400 mt-1">Edit ship component data</p>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between p-3 bg-space-700/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <FileJson size={20} className="text-accent-cyan" />
-                  <div>
-                    <div className="font-medium text-white">ship_hulls.json</div>
-                    <div className="text-sm text-gray-500">18 hull definitions</div>
-                  </div>
-                </div>
-                <button className="px-3 py-1.5 text-sm bg-space-700 hover:bg-space-600 rounded-lg transition-colors">
-                  Edit
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-space-700/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <FileJson size={20} className="text-accent-cyan" />
-                  <div>
-                    <div className="font-medium text-white">ship_drives.json</div>
-                    <div className="text-sm text-gray-500">26 drive codes</div>
-                  </div>
-                </div>
-                <button className="px-3 py-1.5 text-sm bg-space-700 hover:bg-space-600 rounded-lg transition-colors">
-                  Edit
-                </button>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-space-700 hover:bg-space-600 rounded-lg transition-colors">
-                  <Save size={18} />
-                  <span>Save Changes</span>
-                </button>
-                <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-space-700 hover:bg-space-600 rounded-lg transition-colors">
-                  <RotateCcw size={18} />
-                  <span>Reset All</span>
-                </button>
-              </div>
-            </div>
-          </section>
+          <JsonTableEditor />
 
           {/* Theme Settings */}
           <section className="bg-space-800 rounded-xl border border-space-700 overflow-hidden">
@@ -138,7 +100,7 @@ export default function SettingsScreen({ layoutMode, onLayoutChange, onBack }: S
 
           {/* Version */}
           <div className="text-center text-sm text-gray-500 pt-4">
-            CE ShipGen v0.1.0 (Milestone 1)
+            CE ShipGen v0.2.0 (Milestone 2)
           </div>
         </div>
       </div>
