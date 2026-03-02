@@ -8,7 +8,22 @@ interface StartupScreenProps {
 
 export default function StartupScreen({ onGenerate, onLibrary, onSettings }: StartupScreenProps) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-space-900 via-space-800 to-space-900">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-space-900 via-space-800 to-space-900 relative">
+      {/* GI7B Logo - Upper Right */}
+      <a 
+        href="https://gi7b.org"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute top-4 right-4 z-10"
+      >
+        <img 
+          src="/ce-shipgen/gi7b-logo.png" 
+          alt="Game in the Brain"
+          className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+      </a>
+
       {/* Logo Area */}
       <div className="text-center mb-12">
         <div className="inline-flex items-center justify-center w-24 h-24 mb-6 bg-accent-cyan/10 rounded-2xl border-2 border-accent-cyan/30">
