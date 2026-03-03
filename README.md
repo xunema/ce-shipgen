@@ -28,6 +28,208 @@
 
 ---
 
+## 🗂️ Feature Status
+
+**Legend:** ✅ Built & deployed — 📋 Specified in PRD, not yet coded — 🔲 Scope defined, detail pending — ~~Descoped~~
+
+---
+
+### M1: UI Layout & Tiling
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| Tile-based layout — each design step is a collapsible tile | FR-007 | ✅ |
+| Desktop mode — horizontal tiling, multi-column layout | FR-006 | ✅ |
+| Phone mode — vertical tiling, scrollable stack | FR-006 | ✅ |
+| Layout mode toggle in header (Desktop ↔ Phone) | FR-006 | ✅ |
+| Layout preference persisted to localStorage | FR-006 | ✅ |
+| Focus mode — expand any tile to full-screen | FR-007 | ✅ |
+| Startup screen — branded entry point with navigation | FR-008 | ✅ |
+| Header — navigation links to Design / Library / Settings | FR-008 | ✅ |
+| PWA manifest — installable web app | FR-016 | ✅ |
+| Service worker — offline-first caching | FR-016 | ✅ |
+| Offline support — works without internet after first load | FR-016 | ✅ |
+| Shareable URLs — `/design`, `/library`, `/settings` routes | FR-008 | ✅ |
+
+---
+
+### M2: Settings & Data Tables
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| Settings screen with sectioned layout | FR-009 | ✅ |
+| JSON table editor — select table, edit raw JSON, Apply | FR-009 | ✅ |
+| Spreadsheet table view — edit cells directly in a grid | FR-009 | ✅ |
+| Toggle between JSON view and table view per table | FR-009 | ✅ |
+| All 13 ship component tables loaded from `public/data/` | FR-009 | ✅ |
+| Reset individual table to factory default | FR-009 | ✅ |
+| Rule Settings — toggle CE / Mneme / Custom rule sets | FR-010 / FR-015 | ✅ |
+| Rule preferences persisted to localStorage | FR-010 | ✅ |
+
+**13 Component Tables:**
+
+| Table | Contents | Status |
+|-------|----------|--------|
+| `ship_hulls.json` | 18 hull sizes, HP, SP, cost, build time | ✅ |
+| `ship_drives.json` | 26 drive codes, M-Drive & J-Drive performance | ✅ |
+| `hull_configurations.json` | Standard, Distributed, Close Structure | ✅ |
+| `ship_armor.json` | Armor types, tonnage %, protection | ✅ |
+| `ship_bridge_computer.json` | 4 bridge sizes, 7 computer models | ✅ |
+| `ship_software.json` | 5 software programs | ✅ |
+| `ship_sensors.json` | 5 sensor types | ✅ |
+| `ship_crew.json` | 14 crew positions | ✅ |
+| `life_support.json` | 18 accommodation types | ✅ |
+| `ship_weapons.json` | 8 weapon types | ✅ |
+| `ship_missiles.json` | 3 missile types | ✅ |
+| `ship_vehicles.json` | 11 vehicle types | ✅ |
+| `smallcraft_drives.json` | 21 small craft drive codes | ✅ |
+
+---
+
+### M2.5: Install UX & Settings System
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| PWA install prompt — "Install App" button (Chrome/Edge) | FR-021a | ✅ |
+| iOS "Add to Home Screen" instructions | FR-021a | ✅ |
+| "Installed" badge in header when running as standalone PWA | FR-021b | ✅ |
+| "Offline" badge in header when network is unavailable | FR-021b | ✅ |
+| Auto-save table edits — no Save button in table view | FR-022a | ✅ |
+| "Saved" toast notification after each auto-save | FR-022a | ✅ |
+| "Apply JSON" button retained in JSON view | FR-022a | ✅ |
+| Input sanitisation — strip HTML tags from table cell values | FR-023b | ✅ |
+| Named settings snapshots — save current state with a name | FR-024a/b | ✅ |
+| Snapshot list — view, rename, delete saved snapshots | FR-024c | ✅ |
+| Load snapshot — restore all 13 tables + rules from snapshot | FR-024d | ✅ |
+| Export snapshot — download as `.json` file | FR-024c | ✅ |
+| Import snapshot — load from `.json` file | FR-024c | ✅ |
+| Snapshot cap — max 50 snapshots with warning | FR-024b | ✅ |
+| GitHub Actions CI/CD — auto-deploy to `gh-pages` on push to `main` | FR-025 | ✅ |
+| PR build-check gate — builds but does not deploy on pull requests | FR-025 | ✅ |
+
+---
+
+### M2.6: Installed Version Control
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| `version.json` generated at build time via `scripts/write-version.mjs` | FR-026a | ✅ |
+| `prebuild` npm script runs version generation before every build | FR-026a | ✅ |
+| Version display in Settings — version, channel, build timestamp | FR-026b | ✅ |
+| "Updating Instructions" section in Settings — permanent, always visible | FR-026j | ✅ |
+| SW-based update detection — `needRefresh` from `useRegisterSW` | FR-026c | ✅ |
+| "Update Available" amber pill on startup screen | FR-026c | ✅ |
+| Orange dot on Settings header icon when update waiting | FR-026c | ✅ |
+| "Update Available" banner in Settings → Version section | FR-026c | ✅ |
+| Changelog viewer — expandable list in Settings when update available | FR-026d | ✅ |
+| User-controlled update — "Update Now" calls `updateServiceWorker(true)` | FR-026e | ✅ |
+| `registerType: 'prompt'` — new SW never auto-activates | FR-026i | ✅ |
+| `version.json` served NetworkFirst — never served stale from cache | FR-026i | ✅ |
+| Offline guard — update button replaced with "Connect to internet" message | FR-026h | ✅ |
+| ~~Version rollback — descoped~~ (Workbox purges old cache on SW activation) | ~~FR-026f~~ | ~~Descoped~~ |
+| ~~Release channels (stable/beta) — descoped~~ (no multi-channel CI/CD) | ~~FR-026g~~ | ~~Descoped~~ |
+
+---
+
+### M2.7: Tables In Play *(specified — implementation next)*
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| Active table registry — `ce_shipgen_active_tables` in localStorage | FR-027a | 📋 |
+| Default all 13 types to built-in CE tables on first run | FR-027a | 📋 |
+| Settings → "Tables In Play" section — one row per component type | FR-027b | 📋 |
+| Dropdown per row — lists CE Default + all custom tables of that type | FR-027b | 📋 |
+| Custom table rows highlighted in cyan; default rows in plain text | FR-027b | 📋 |
+| "Reset All to Defaults" button — reverts registry, preserves custom data | FR-027b | 📋 |
+| Table type tagging — custom tables carry their component type ID | FR-027c | 📋 |
+| `getActiveTable(type)` helper — single integration point for M3 wizard | FR-027d | 📋 |
+| Active table registry included in FR-024 settings snapshots | FR-027d | 📋 |
+
+---
+
+### M3.1: Hull & Foundation *(specified — blocked on M2.7)*
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| Hull selection — choose from 18 sizes (100–5000 dtons) | FR-028a | 📋 |
+| Auto-calculate Hull Points = `floor(Dtons / 50)` | FR-028a | 📋 |
+| Auto-calculate Structure Points = `ceil(Dtons / 50)` | FR-028a | 📋 |
+| Auto-calculate Hardpoints = `floor(Dtons / 100)` | FR-028a | 📋 |
+| Configuration selection — Standard / Distributed / Close Structure | FR-028b | 📋 |
+| Configuration modifies armor tonnage cost multiplier in real time | FR-028b | 📋 |
+| Armor selection — type and amount from active armor table | FR-028c | 📋 |
+| Armor tonnage = `hull_dtons × armor% × config_multiplier` | FR-028c | 📋 |
+| Armor tonnage deducted from available tonnage in real time | FR-028c | 📋 |
+| M-Drive constraint display — valid letter range for this hull | FR-028d | 📋 |
+| J-Drive constraint display — valid letter range and jump range | FR-028d | 📋 |
+| Power Plant constraint display — min letter = max(M-Drive, J-Drive) | FR-028d | 📋 |
+
+---
+
+### M3.2: Bridge to Crew *(scope defined — detail pending)*
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| Fuel calculation — based on drive selection and hull (Step 7) | FR-029 | 🔲 |
+| Bridge / Cockpit selection (Step 8) | FR-029 | 🔲 |
+| Computer selection — 7 models (Step 9) | FR-029 | 🔲 |
+| Software selection — 5+ programs (Step 10) | FR-029 | 🔲 |
+| Sensors selection — 5 types (Step 11) | FR-029 | 🔲 |
+| Crew auto-calculation — summed from component requirements (Step 12) | FR-029 | 🔲 |
+| Crew validation against available bridge stations | FR-029 | 🔲 |
+
+---
+
+### M3.3: Fittings to BOQ *(scope defined — detail pending)*
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| Accommodations — 18 types (staterooms, low berths, etc.) (Step 13) | FR-030 | 🔲 |
+| Features — optional ship features (Step 14) | FR-030 | 🔲 |
+| Turrets / Bays / Screens (Step 15) | FR-030 | 🔲 |
+| Weapons — 8 weapon types (Step 16) | FR-030 | 🔲 |
+| Vehicles — 11 vehicle types (Step 17) | FR-030 | 🔲 |
+| Cargo — remaining tonnage (Step 18) | FR-030 | 🔲 |
+| BOQ Cost Summary — full line-item breakdown, tonnage + cost per component (Step 19) | FR-030 | 🔲 |
+| Real-time validation — tonnage used ≤ hull, PP ≥ drives, hardpoints ≤ limit | FR-002 | 🔲 |
+
+---
+
+### M4: Persistence & Export *(pending)*
+
+| Feature | FR | Status |
+|---------|-----|--------|
+| Ship library — save / load / duplicate / delete designs | FR-004 | 🔲 |
+| Ship library — search and filter | FR-004 | 🔲 |
+| Auto-save on design change | FR-004 | 🔲 |
+| JSON export / import | FR-005 | 🔲 |
+| CSV export | FR-005 | 🔲 |
+| Universal Ship Description text format | FR-005 | 🔲 |
+| Mneme Space Combat stat block | FR-005 | 🔲 |
+| Print-friendly view | FR-005 | 🔲 |
+| Markdown / Wikitext export | FR-005 | 🔲 |
+| Common ship templates (Free Trader, Scout, Patrol Cruiser…) | FR-004 | 🔲 |
+
+---
+
+### Future / Phase 2 *(not yet in PRD scope)*
+
+| Feature | Notes |
+|---------|-------|
+| Supply Calculator — life support, fuel, maintenance costs | Logistic calculator |
+| Inventory System — real-time resource tracking per ship | Logistic calculator |
+| Journey Table — trip log with income/expense per leg | Logistic calculator |
+| Income Tracker — revenue, expenses, P&L over time | Logistic calculator |
+| Habitat Design — space stations, MAGICIAN spin habitats | Extends BOQ method |
+| Vehicle Construction — grav vehicles, ATVs, small craft | Extends BOQ method |
+| Advanced Mneme Physics — mass-based, delta-V calculations | Variant rules |
+| TL6–TL9 Ship Library — low-tech transition ships | Content |
+| Random Encounter Tables — generated from ship library | GM tools |
+| Mneme Fleet Combat Tools — Superiority, MAC calculators | Variant rules |
+| Procedural Deck Plan Generator — 2D/3D ship layout | Long term |
+
+---
+
 ## 🎯 Problem Statement
 
 You are a Game Master trying to manage all the ships in your setting and accommodate your players. The amount of time these ships and the complex rules eat up during your prep is overwhelming. You want the freedom to edit and customize ships quickly without getting bogged down in calculations and cross-referencing tables.
