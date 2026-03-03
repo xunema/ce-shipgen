@@ -18,7 +18,10 @@
 | **M2: Settings & Data Tables** | JSON editor + spreadsheet view for all 13 ship component tables, rule toggles (CE / Mneme / custom mix) | ✅ Complete |
 | **M2.5: Install UX & Settings System** | PWA install prompt + "Installed" badge (FR-021), auto-save table edits (FR-022), input sanitisation (FR-023), named settings snapshots save/load/export/import (FR-024), GitHub Actions CI/CD pipeline (FR-025) | ✅ Complete |
 | **M2.6: Installed Version Control** | Build-time `version.json` generation (FR-026a), version display in Settings (FR-026b), SW-based update detection — never forced (FR-026c), changelog viewer (FR-026d), user-controlled update via `updateServiceWorker` (FR-026e), offline guard (FR-026h), `registerType: prompt` SW integration (FR-026i), permanent Updating Instructions section in Settings (FR-026j) | ✅ Complete |
-| **M3: Ship Generation** | 19-step ship design wizard following CE Chapter 8, real-time BOQ (Bill of Quantities), tonnage/cost/crew/fuel calculations, validation | 🎯 Current |
+| **M2.7: Tables In Play** | Active table selector per component type (FR-027a–d). Settings → "Tables In Play" shows all 13 component types with a dropdown to switch between built-in default and any custom tables. Feeds directly into M3 — the design wizard always reads from the active table, never hardcoded defaults. | 🎯 Current |
+| **M3.1: Hull & Foundation** | Steps 1–3: Hull selection (18 sizes, auto-calc HP/SP/hardpoints), Configuration (Standard / Distributed / Close Structure), Armor (tonnage = hull × % × config multiplier). Plus constraint display for Steps 4–6: valid M-Drive, J-Drive, and Power Plant letter ranges derived from hull tonnage. | ⏳ Blocked on M2.7 |
+| **M3.2: Bridge to Crew** | Steps 7–12: Fuel calculation, Bridge/Cockpit, Computer, Software, Sensors, auto-calculated Crew requirement (summed from component selections, validated against bridge stations) | ⏳ Pending |
+| **M3.3: Fittings to BOQ** | Steps 13–19: Accommodations, Features, Turrets/Bays/Screens, Weapons, Vehicles, Cargo, Cost Summary. Key output: BOQ (Bill of Quantities) — full component breakdown with tonnage and cost per item | ⏳ Pending |
 | **M4: Persistence & Export** | Ship library with save/load/delete, JSON / CSV / text / print export, common ship templates | ⏳ Pending |
 
 > **Descoped from M2.6:** Rollback (FR-026f) and Release Channels (FR-026g) require versioned URL hosting and a multi-channel CI/CD pipeline that do not yet exist on GitHub Pages. Deferred to a future milestone.
@@ -140,6 +143,48 @@ See [📊 Milestone Status](#-milestone-status) at the top of this document for 
 **Descoped (not achievable on GitHub Pages):**
 - ~~Version rollback~~ — Workbox purges old caches on SW activation; old code cannot be restored without versioned URL hosting
 - ~~Release channels (stable/beta)~~ — Requires a multi-channel CI/CD pipeline that does not yet exist
+
+### M2.7: Tables In Play (Current 🎯)
+
+**Problem solved:** The M2 table editor lets users create custom component tables, but there was no way to tell the ship design wizard *which* table to use. Every design step was implicitly hardcoded to built-in defaults.
+
+**What M2.7 adds:**
+- **Active Table Registry** — `ce_shipgen_active_tables` in localStorage maps each of the 13 component types to its currently selected table
+- **"Tables In Play" view in Settings** — One row per component type, dropdown to switch between CE Default and any custom tables of that type; custom tables highlighted in cyan
+- **Reset All to Defaults** — Reverts all selections without touching custom table data
+- **`getActiveTable(type)` helper** — Single integration point consumed by M3; no wizard step references a table file directly
+- **Snapshot integration** — Active table selections are included in FR-024 settings snapshots
+
+This is the bridge between M2 (edit tables) and M3 (use tables). It enables mixed-rule designs: e.g. standard CE hulls + Mneme drives + custom armor — all selected in one place.
+
+---
+
+### M3: Ship Generation Sub-Milestones
+
+The 19-step ship design process is delivered in three sequential slices:
+
+#### M3.1: Hull & Foundation (⏳ Blocked on M2.7)
+
+**Steps 1–3 + constraint display for 4–6**
+
+- **Hull Selection** — Choose from 18 sizes (100–5000 dtons); auto-calculates HP, SP, hardpoints
+- **Configuration** — Standard / Distributed / Close Structure; modifies armor tonnage cost
+- **Armor** — Select type and thickness; tonnage = `hull_dtons × armor% × config_multiplier`
+- **Drive Constraints** — Once hull is selected, valid letter ranges (A–Z) for M-Drive, J-Drive, and Power Plant are displayed as constraints on steps 4–6 before the user selects them
+
+#### M3.2: Bridge to Crew (⏳ Pending)
+
+**Steps 7–12**
+
+Fuel calculation, Bridge/Cockpit, Computer, Software, Sensors. Crew is **auto-calculated** from component selections — not manually entered — and validated against available bridge stations.
+
+#### M3.3: Fittings to BOQ (⏳ Pending)
+
+**Steps 13–19**
+
+Accommodations, Features, Turrets/Bays/Screens, Weapons, Vehicles, Cargo, and the final **BOQ (Bill of Quantities)** — a complete line-item breakdown of every component with its tonnage and cost. This is the primary output of a completed ship design.
+
+---
 
 ### Project Scope & Ecosystem
 

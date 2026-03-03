@@ -995,7 +995,10 @@ Add `husky` + a pre-commit hook running `tsc --noEmit`. The `pwa.d.ts` structura
 | M2: Settings & Data Tables | JSON + table editors, all 13 tables, rule toggles | ✅ Complete |
 | M2.5: Install UX & Settings System | FR-021 (install prompt), FR-022 (auto-save + reset), FR-023 (security), FR-024 (snapshots), FR-025 (CI/CD) | ✅ Complete — "Installed" badge and snapshots verified working |
 | M2.6: Installed Version Control | FR-026 — Version display, update detection (SW-based), user-controlled updates, offline behavior | ✅ Complete — Built and deployed |
-| M3: Ship Generation | 19-step wizard, BOQ, real-time calculations | 🎯 Current — M2.6 unblocked |
+| M2.7: Tables In Play | FR-027 — Active table selector per component type; "Tables In Play" view in Settings lets user switch which table drives each design step | 🎯 Current |
+| M3.1: Hull & Foundation | FR-028 — Hull selection (18 sizes), configuration (3 types), armor selection, min/max constraints for M-Drive, J-Drive, Power Plant derived from hull tonnage | ⏳ Blocked on M2.7 |
+| M3.2: Bridge to Crew | Steps 7–12: Bridge/Cockpit, Computer, Software, Sensors, Crew calculation | ⏳ Pending |
+| M3.3: Fittings to BOQ | Steps 13–19: Accommodations, Features, Weapons/Turrets, Vehicles, Cargo, Cost Summary (BOQ) | ⏳ Pending |
 | M4: Persistence & Export | Ship library, JSON/CSV/text/print export | ⏳ Pending |
 
 ---
@@ -1016,7 +1019,7 @@ Add `husky` + a pre-commit hook running `tsc --noEmit`. The `pwa.d.ts` structura
    - Load: Correctly restores all 13 tables and rule settings
    - Export/Import: Working with proper JSON format
 
-**M2.5 is complete. M2.6 is complete. Proceeding to M3.**
+**M2.5 is complete. M2.6 is complete. Proceeding to M2.7 (Tables In Play) before opening M3.**
 
 ---
 
@@ -1442,5 +1445,242 @@ workbox: {
 ---
 
 **PRD Status:** LIVING DOCUMENT — updated per session
-**Last updated:** March 3, 2026 — M2.6 implemented (Session 6); FR-026f/g descoped with rationale
-**Next implementation target:** M3 — Ship Generation (19-step wizard, BOQ, real-time calculations)
+**Last updated:** March 3, 2026 — M2.7 (FR-027) and M3 sub-milestones (FR-028) added
+**Next implementation target:** M2.7 — Tables In Play (FR-027), then M3.1 — Hull & Foundation (FR-028)
+
+---
+
+## 13. ADDENDUM — M2.7 Tables In Play (FR-027)
+
+**Added:** March 3, 2026
+**Priority:** Critical — prerequisite for M3
+**Milestone:** M2.7 — must complete before M3.1
+
+### 13.1 Problem Statement
+
+The M2 JSON/Table editor lets users create and edit custom data tables, but there is no mechanism to select *which* table is active for each component type during ship design. When the M3 wizard loads Hull options, it has no way to know whether to use the default CE table or a custom Mneme variant the user has built. M2.7 bridges M2 (table editing) and M3 (table consumption).
+
+### 13.2 Concept
+
+Each of the 13 component types maps to exactly one **active table** at any time. By default every type points to the built-in CE default. If the user has created custom tables in the JSON editor, they can promote any one of them to "active" for that type. The ship design wizard always reads from the active table, never hardcoded defaults.
+
+This allows players to:
+- Use standard CE rules out of the box (all defaults)
+- Activate Mneme variant tables for specific component types (e.g. Mneme drives, CE hulls)
+- Create entirely custom rule variants by building and activating their own tables
+
+### 13.3 Requirements
+
+#### FR-027a: Active Table Registry
+
+**Storage:** `ce_shipgen_active_tables` — object in localStorage mapping each component type ID to its active table key:
+
+```json
+{
+  "hull":           "default",
+  "configuration":  "default",
+  "armor":          "default",
+  "m_drive":        "default",
+  "j_drive":        "default",
+  "power_plant":    "default",
+  "bridge":         "default",
+  "computer":       "default",
+  "sensors":        "default",
+  "accommodations": "default",
+  "features":       "default",
+  "weapons":        "default",
+  "vehicles":       "default"
+}
+```
+
+**Default behaviour:** If a type is absent from the registry (first run, or key deleted), fall back to the built-in default table for that type.
+
+---
+
+#### FR-027b: Tables In Play View
+
+**Location:** Settings → "Tables In Play" section (placed between Rule Settings and the JSON Table Editor)
+
+**Layout:** A compact table — one row per component type:
+
+| Component Type | Active Table | |
+|----------------|-------------|---|
+| Hull | CE Default | [Change ▼] |
+| Configuration | CE Default | [Change ▼] |
+| Armor | CE Default | [Change ▼] |
+| M-Drive | Mneme Drives (custom) | [Change ▼] |
+| … | … | … |
+
+**Dropdown contents per row:** List of all available tables for that component type:
+- Built-in default (labelled "CE Default")
+- Any custom tables the user has saved for that type (labelled with their given name)
+
+**Visual indicators:**
+- Rows using default: plain text
+- Rows using a custom table: table name shown in `text-accent-cyan`
+- "Reset All to Defaults" button at the bottom of the section
+
+---
+
+#### FR-027c: Table Type Tagging
+
+Each custom table created/saved in the JSON Table Editor must carry a `type` field matching one of the 13 component type IDs. This is how the "Tables In Play" dropdown knows which tables to offer per row.
+
+**Existing tables in `public/data/`** are already organised by filename (e.g. `hulls.json`, `armor.json`). Their type is derived from their filename. Custom user tables saved to localStorage carry the type of the source table they were derived from.
+
+---
+
+#### FR-027d: Consumption by Ship Design Wizard
+
+When any M3 wizard step loads its component options, it calls a `getActiveTable(type)` helper that:
+1. Reads `ce_shipgen_active_tables` from localStorage
+2. Returns the key for the active table of that type
+3. Fetches the corresponding table data (from `public/data/` for defaults, or localStorage for custom)
+
+This is the single integration point between M2.7 and M3. All wizard steps use this helper — none reference table files directly.
+
+---
+
+### 13.4 Acceptance Criteria
+
+- [ ] `ce_shipgen_active_tables` initialized on first run with all defaults
+- [ ] Settings → "Tables In Play" shows all 13 component types
+- [ ] Dropdown for each type lists built-in default + any user custom tables of that type
+- [ ] Selecting a custom table updates the registry and persists
+- [ ] Custom tables shown in cyan; defaults in plain text
+- [ ] "Reset All to Defaults" reverts registry without touching custom table data
+- [ ] `getActiveTable(type)` helper returns correct table data for default and custom cases
+- [ ] Active table registry survives page reload and app updates
+- [ ] Settings snapshots (FR-024) include the active table registry in save/restore
+
+---
+
+## 14. ADDENDUM — M3 Ship Generation Sub-Milestones
+
+**Added:** March 3, 2026
+**Depends on:** M2.7 (FR-027) complete
+
+The 19-step ship design process is split into three sequential sub-milestones. Each sub-milestone delivers a usable, testable slice of the wizard.
+
+### 14.1 M3.1: Hull & Foundation (FR-028)
+
+**Steps covered:** 1 (Hull), 2 (Configuration), 3 (Armor), and constraint display for 4–6 (Drives & Power Plant)
+
+**Priority:** Critical — first playable ship design step
+
+---
+
+#### FR-028a: Hull Selection
+
+**Source table:** Active hull table (via `getActiveTable('hull')`)
+
+**Display:** Selection UI showing all available hull sizes:
+
+| Size (Dtons) | Hull Points | Structure Points | Cost (MCr) | Build Time |
+|-------------|-------------|-----------------|------------|------------|
+| 100 | 2 | 2 | 2 | 36 months |
+| 200 | 4 | 4 | 8 | … |
+| … | … | … | … | … |
+
+**Auto-calculated on selection:**
+- Hull Points = `floor(Dtons / 50)`
+- Structure Points = `ceil(Dtons / 50)`
+- Available Hardpoints = `floor(Dtons / 100)`
+- Fuel tankage range (displayed as constraint for Step 7)
+
+**Acceptance:** Selecting a hull size immediately populates HP, SP, hardpoints, and unlocks steps 2–6.
+
+---
+
+#### FR-028b: Configuration
+
+**Source table:** Active configuration table (via `getActiveTable('configuration')`)
+
+**3 types:**
+
+| Configuration | Armour Cost Multiplier | Notes |
+|--------------|----------------------|-------|
+| Standard | ×1 | Default |
+| Distributed | ×1 (but harder to disable) | |
+| Close Structure | ×1.5 | Additional tonnage cost |
+
+**Effect:** Configuration is recorded on the ship design and modifies armor tonnage cost in Step 3.
+
+**Acceptance:** Selecting a configuration updates the armor cost calculation in real time.
+
+---
+
+#### FR-028c: Armor Selection
+
+**Source table:** Active armor table (via `getActiveTable('armor')`)
+
+**Display:** Armor types with their tonnage cost (percentage of hull) and protection value.
+
+**Tonnage calculation:**
+```
+Armor Tonnage = hull_dtons × armor_percentage × configuration_multiplier
+```
+
+**Acceptance:** Selecting armor type and amount auto-calculates tonnage used and deducts from available tonnage.
+
+---
+
+#### FR-028d: Drive & Power Plant Constraint Display (Steps 4–6)
+
+Once hull is selected, compute and display the valid selection ranges for the next three steps. These are *displayed as constraints* — the actual drive/power plant selector is implemented in M3.2.
+
+**M-Drive valid range:**
+- Minimum: none required (optional)
+- Maximum: determined by hull tonnage from the Drive Performance table
+- Show: letter range A–Z available for this hull, and corresponding thrust values (1G–6G)
+
+**J-Drive valid range:**
+- Minimum: none required (optional)
+- Maximum: determined by hull tonnage from the Drive Performance table
+- Show: letter range and corresponding jump range (J1–J6)
+
+**Power Plant minimum:**
+- `PP_min_letter = max(selected_M_drive_letter, selected_J_drive_letter)`
+- Until drives are selected, show "PP minimum: depends on drive selections"
+- Show: valid letter range and fuel consumption per week
+
+**UI:** Each of the three drive/plant steps displays a compact constraint summary derived from the hull selection, e.g.:
+```
+Hull: 400 dtons selected
+M-Drive: A–F available (Thrust 1–6)
+J-Drive: A–F available (Jump 1–6)
+Power Plant: min = your drive choice, max = F
+```
+
+**Acceptance:** Constraint summary updates immediately when hull size changes. Drive and power plant tiles show the valid range, not the full table.
+
+---
+
+### 14.2 M3.2: Bridge to Crew (FR-029) — Scope Only
+
+**Steps covered:** 7 (Fuel), 8 (Bridge/Cockpit), 9 (Computer), 10 (Software), 11 (Sensors), 12 (Crew Calculation)
+
+**Key calculation:** Crew is auto-calculated from component selections — not manually entered. Each component type has a crew requirement; the wizard sums them and validates against bridge station count.
+
+*Full FR-029 specification to be written when M3.1 is complete.*
+
+---
+
+### 14.3 M3.3: Fittings to BOQ (FR-030) — Scope Only
+
+**Steps covered:** 13 (Accommodations), 14 (Features), 15 (Turrets/Bays/Screens), 16 (Weapons), 17 (Vehicles), 18 (Cargo), 19 (Cost Summary / BOQ)
+
+**Key deliverable:** The BOQ (Bill of Quantities) — a complete component breakdown showing every item, its tonnage, and its cost. This is the primary output of the ship design process.
+
+*Full FR-030 specification to be written when M3.2 is complete.*
+
+---
+
+### 14.4 M3 Milestone Table
+
+| Sub-Milestone | Steps | FRs | Depends On | Status |
+|--------------|-------|-----|------------|--------|
+| M3.1: Hull & Foundation | 1–3 + constraint display for 4–6 | FR-028a–d | M2.7 (FR-027) | ⏳ Blocked on M2.7 |
+| M3.2: Bridge to Crew | 7–12 | FR-029 | M3.1 | ⏳ Pending |
+| M3.3: Fittings to BOQ | 13–19 | FR-030 | M3.2 | ⏳ Pending |
+
