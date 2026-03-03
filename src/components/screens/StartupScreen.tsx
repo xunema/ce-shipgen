@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react'
-import { Plus, Library, Settings, HelpCircle, Rocket, ExternalLink, Heart, Download } from 'lucide-react'
+import { Plus, Library, Settings, HelpCircle, Rocket, ExternalLink, Heart, Download, RefreshCw } from 'lucide-react'
 
 interface StartupScreenProps {
   onGenerate: () => void
   onLibrary: () => void
   onSettings: () => void
+  needRefresh: boolean
+  updateServiceWorker: (reloadPage?: boolean) => Promise<void>
 }
 
-export default function StartupScreen({ onGenerate, onLibrary, onSettings }: StartupScreenProps) {
+export default function StartupScreen({
+  onGenerate,
+  onLibrary,
+  onSettings,
+  needRefresh,
+  updateServiceWorker
+}: StartupScreenProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isStandalone] = useState(
     window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
@@ -140,9 +148,25 @@ export default function StartupScreen({ onGenerate, onLibrary, onSettings }: Sta
         )}
       </div>
 
-      {/* Version */}
-      <div className="mt-8 text-gray-600 text-sm">
-        Version 0.2.5 (Milestone 2.5)
+      {/* Version + Update Available */}
+      <div className="mt-8 flex flex-col items-center gap-2">
+        <div className="text-gray-600 text-sm">
+          <span>Version 0.2.6</span>
+          <span className="mx-2">|</span>
+          <span className="text-accent-cyan">M2.6: Version Control</span>
+          <span className="mx-2">|</span>
+          <span className="text-accent-green">M2.5 Complete ✓</span>
+        </div>
+
+        {needRefresh && (
+          <button
+            onClick={() => void updateServiceWorker(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-accent-orange/20 border border-accent-orange/40 text-accent-orange text-sm rounded-lg hover:bg-accent-orange/30 transition-colors"
+          >
+            <RefreshCw size={14} />
+            Update Available — Tap to Update
+          </button>
+        )}
       </div>
 
       {/* Attribution & Links */}

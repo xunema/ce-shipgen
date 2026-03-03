@@ -993,40 +993,454 @@ Add `husky` + a pre-commit hook running `tsc --noEmit`. The `pwa.d.ts` structura
 |-----------|-------|--------|
 | M1: UI Layout & Tiling | Layout, tiles, focus mode, PWA | ✅ Complete |
 | M2: Settings & Data Tables | JSON + table editors, all 13 tables, rule toggles | ✅ Complete |
-| M2.5: Install UX & Settings System | FR-021 (install), FR-022 (auto-save + reset), FR-023 (security), FR-024 (snapshots), FR-025 (CI/CD) | ⚠️ Needs Verification |
-| M2.6: Local Signal & Snapshot Fix | FR-021b (standalone indicator confirmed working), FR-024 (snapshots confirmed working in browser) | 🎯 Next — required before M3 |
-| M3: Ship Generation | 19-step wizard, BOQ, real-time calculations | ⏳ Blocked on M2.6 |
+| M2.5: Install UX & Settings System | FR-021 (install prompt), FR-022 (auto-save + reset), FR-023 (security), FR-024 (snapshots), FR-025 (CI/CD) | ✅ Complete — "Installed" badge and snapshots verified working |
+| M2.6: Installed Version Control | FR-026 — Version display, update detection (SW-based), user-controlled updates, offline behavior | ✅ Complete — Built and deployed |
+| M3: Ship Generation | 19-step wizard, BOQ, real-time calculations | 🎯 Current — M2.6 unblocked |
 | M4: Persistence & Export | Ship library, JSON/CSV/text/print export | ⏳ Pending |
 
 ---
 
-### 11.8 M2.6 Blocker — Local Signal & Snapshots Verification Required
+### 11.8 M2.5 Completed — Local Signal & Snapshots Verified
 
-**Added:** March 2, 2026 (Session 5 wrap-up)
-**Priority:** Critical — must resolve before M3 begins
+**Status:** ✅ COMPLETE — March 3, 2026
 
-**Problem Statement:**
-End-of-session manual testing revealed that two M2.5 features are not confirmed working in the live deployed app:
+**Verification Results:**
+1. ✅ **FR-021b — Standalone / "Installed" indicator** 
+   - "Installed" badge correctly appears when app runs in standalone mode
+   - Badge is absent when running in browser tab
+   - Detection via `window.matchMedia('(display-mode: standalone)')` and `navigator.standalone` works correctly
 
-1. **FR-021b — Standalone / "Installed" indicator** ("Local signal")
-   - The header badge showing "Installed" (green dot) when the app is running as a standalone PWA has not been verified in the live environment
-   - The `window.matchMedia('(display-mode: standalone)')` and `navigator.standalone` detection is implemented in code but has not been tested against the actual installed PWA on a real device or Chrome's install flow
-   - Risk: the condition may never be true in practice if the app is not correctly registered as installable, or if the manifest/service worker configuration prevents the standalone display mode from activating
+2. ✅ **FR-024 — Settings Snapshots**
+   - Save snapshot: Creates entry with timestamp-based name
+   - Persist: Survives page reload
+   - Load: Correctly restores all 13 tables and rule settings
+   - Export/Import: Working with proper JSON format
 
-2. **FR-024 — Settings Snapshots**
-   - The snapshots component is implemented but has not been verified working end-to-end in the browser
-   - Specific concerns: async fetch of default table data during snapshot save, the `key={snapshotVersion}` remount triggering correctly after load, localStorage reads/writes at the `ce_shipgen_presets` key
+**M2.5 is complete. M2.6 is complete. Proceeding to M3.**
 
-**Required before M3:**
-- [ ] Install the app from https://xunema.github.io/ce-shipgen/ on Chrome desktop
-- [ ] Confirm "Installed" badge appears in header when running in standalone mode
-- [ ] Confirm badge is absent when running in browser tab
-- [ ] Save a snapshot, reload the page, confirm snapshot persists
-- [ ] Load a snapshot, re-select a table, confirm data reflects the loaded snapshot
-- [ ] If either feature is broken: diagnose, fix, redeploy, re-verify before opening M3
+---
+
+## 12. ADDENDUM — M2.6 Installed Version Control (FR-026)
+
+**Added:** March 3, 2026  
+**Priority:** Critical — Current Implementation Target  
+**Milestone:** M2.6 — Must complete before M3
+
+### 12.1 Problem Statement
+
+Users with the PWA installed locally have no control over when updates are applied. While the "Installed" badge (FR-021b) successfully detects when the app runs as a standalone PWA, users currently cannot:
+- See which version they have installed
+- Choose when to apply updates (updates apply automatically on page reload)
+- Roll back to previous versions if a new version has issues
+- Opt into beta/release channels for early access
+- Lock to a specific version for campaign consistency
+
+**Impact:** A broken release could disrupt active campaigns. Users need agency over their local instance.
+
+### 12.2 Solution Overview
+
+A version control system that treats the installed PWA like a package manager treats software:
+- Version is visible and tracked
+- Updates are detected but not forced
+- User controls when to update
+- Previous versions remain available for rollback
+- Multiple release channels (stable/beta)
+
+### 12.3 Requirements
+
+#### FR-026a: Version Manifest
+
+**Storage:** A `version.json` file is generated at build time and deployed with the app:
+```json
+{
+  "version": "0.2.6",
+  "buildTimestamp": "2026-03-03T14:30:00Z",
+  "channel": "stable",
+  "changelog": [
+    "Added version control system",
+    "Fixed table view race condition",
+    "Updated repository URLs"
+  ],
+  "minimumCompatibleVersion": "0.2.5"
+}
+```
+
+**Location:** `/ce-shipgen/version.json` (served alongside the app)
+
+**Generation:** Vite plugin or npm script that writes this file during `npm run build`
+
+---
+
+#### FR-026b: Settings Version Control — Two Distinct Sections
+
+The Settings screen contains two separate, always-present sections for version management. They are intentionally separate: one explains the model (static), the other shows live state (dynamic).
+
+**Section 1 — "Updating" (static instructions, always visible)**
+See FR-026j for full specification.
+
+**Section 2 — "Version" (live state, always visible)**
+
+**Location:** Settings → Version section (below the Updating section)
+
+**Display format:**
+```
+Current Version
+0.2.6 (stable)
+Build: Mon, 03 Mar 2026 14:30:00 UTC
+```
+
+**Requirements:**
+- Fetch `version.json` on Settings screen mount via `useVersionCheck` hook
+- Show loading state while fetching
+- Show "Version information unavailable" if fetch fails
+- Show current version string, channel, and build timestamp (UTC)
+- When `needRefresh` is true: show Update Available banner (FR-026c indicators) with changelog toggle and Update Now button (FR-026e)
+- When offline and no update pending: show "Offline — version check unavailable" note
+
+---
+
+#### FR-026c: Update Detection
+
+**Mechanism:** The service worker's `needRefresh` signal from `useRegisterSW` (vite-plugin-pwa) is the primary update trigger. `version.json` is fetched separately for displaying changelog and build metadata only.
+
+**Process:**
+1. `useRegisterSW` (called in App.tsx) registers the service worker and monitors for a waiting SW
+2. When a new SW installs and is waiting, `needRefresh` becomes `true`
+3. `needRefresh` is passed as a prop to Header, StartupScreen, and SettingsScreen
+
+**Detection indicators:**
+- **Startup screen:** Amber "Update Available" pill button below version text
+- **Header (all screens):** Orange dot on Settings icon when update available
+- **Settings screen:** Orange banner in Version section with changelog + Update Now button
+
+**Note:** `version.json` is fetched on Settings screen load for version display and changelog content. It is served with NetworkFirst cache strategy so it is always current.
+
+---
+
+#### FR-026d: Changelog Display
+
+**Modal dialog:** When user clicks "View Changelog"
+
+**Content:**
+- Current version → New version
+- Full changelog array from version.json
+- Breaking changes highlighted in red (if any)
+- Release date
+
+**Button:** "Update Now" / "Cancel"
+
+---
+
+#### FR-026e: User-Controlled Update
+
+**Core Principle:** User initiates update, never forced
+
+**Update flow:**
+1. User sees "Update Available" indicator (startup pill or Settings banner)
+2. User clicks "Update Now"
+3. `updateServiceWorker(true)` is called — this posts `SKIP_WAITING` to the waiting SW, listens for `controllerchange`, then reloads the page
+4. New version activates
+
+**Implementation:** Uses `updateServiceWorker` from `useRegisterSW` (vite-plugin-pwa `virtual:pwa-register/react`). Do NOT use `window.location.reload(true)` — that argument is deprecated and does not activate a waiting service worker.
+
+---
+
+#### FR-026f: Version Rollback — DESCOPED from M2.6
+
+**Reason:** Not achievable with GitHub Pages + standard Workbox service workers. When a new SW activates, Workbox purges the previous version's cache. There is no old code left to restore. Storing version metadata in localStorage does not restore old app code — it would show a success toast while serving the current version.
+
+**Future path:** Rollback requires either (a) serving previous versions at versioned URLs (e.g. `/v0.2.5/`), or (b) a CDN that preserves old build artifacts. Neither exists in the current GitHub Pages deployment.
+
+**Deferred to:** A future milestone when a proper multi-version hosting strategy is in place.
+
+---
+
+#### FR-026g: Release Channels — DESCOPED from M2.6
+
+**Reason:** A beta channel requires a separate CI/CD pipeline that publishes a distinct build to a `version-beta.json` endpoint. No such pipeline or hosting path exists. Building the UI toggle without the backend infrastructure would be non-functional.
+
+**Deferred to:** A future milestone when a multi-channel CI/CD pipeline (e.g. `main` → stable, `develop` → beta) is in place.
+
+---
+
+#### FR-026h: Offline Version Behavior
+
+**Installed PWA can run offline:** Yes, via service worker cache
+
+**Version detection when offline:**
+- Cannot fetch remote version.json
+- Show "Offline — version check unavailable" subtly in Settings
+- No update prompts while offline
+
+**Update while offline:**
+- Update button disabled with tooltip: "Connect to internet to update"
+- Background: When connection restored, automatically check for updates
+
+---
+
+#### FR-026i: Service Worker Integration
+
+**Change from M2.5:** `vite.config.ts` switches from `registerType: 'autoUpdate'` → `registerType: 'prompt'`
+
+**Do NOT add a manual `navigator.serviceWorker.register()` call.** vite-plugin-pwa handles registration internally via the `useRegisterSW` hook.
+
+**Implementation:**
+```typescript
+// App.tsx
+import { useRegisterSW } from 'virtual:pwa-register/react'
+
+const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
+// needRefresh: true when a new SW is installed and waiting
+// updateServiceWorker(true): posts SKIP_WAITING, waits for controllerchange, reloads
+```
+
+**vite.config.ts workbox changes:**
+- `globPatterns`: remove `json` to avoid precaching `version.json`
+- `runtimeCaching`: add NetworkFirst rule for `/version.json` so it is always fetched fresh
+
+**Type declarations:** Add `/// <reference types="vite-plugin-pwa/client" />` to `vite-env.d.ts`
+
+---
+
+#### FR-026j: Updating Instructions Section
+
+**Purpose:** A permanent, always-visible section in Settings that explains the update model to the user. This section never changes based on app state — it is static explanatory content. It gives users confidence and agency before they ever encounter an update notification.
+
+**Location:** Settings → "Updating" section (placed above the "Version" section)
+
+**Why a separate section is required:**
+The "Version" section shows live state (current version number, update banner). The "Updating" section explains the *model* — how updates work in principle. Mixing the two creates a UI where instructions only appear when an update is available, meaning first-time users who do update have never read how it works. Permanent instructions remove this gap.
+
+**Content requirements:**
+
+| Step | Content |
+|------|---------|
+| 1 | Updates download automatically in the background when online. **You are never forced to update.** |
+| 2 | When a new version is ready, an orange dot appears on the Settings icon in the header, and a pill button appears on the startup screen. |
+| 3 | Come to the Version section below and click **Update Now** when ready. The app reloads with the new version. |
+| 4 | All settings, snapshots, rules, and table customisations are stored locally and are **never affected by updates**. |
+
+**Footer note (de-emphasised):**
+> If you are offline, updates are queued until you reconnect. You can keep using the app normally while offline.
+
+**UI pattern:** Numbered list with cyan step numbers. Step text in `text-gray-300`. Bold emphasis on key guarantees (`text-white`). Footer in `text-xs text-gray-500` with a top border separator.
+
+**Mockup:**
+```
+┌─────────────────────────────────────┐
+│ Updating                            │
+│ How app updates work                │
+├─────────────────────────────────────┤
+│                                     │
+│  1. Updates download automatically  │
+│     in the background. You are      │
+│     never forced to update.         │
+│                                     │
+│  2. When ready, an orange dot       │
+│     appears on the Settings icon    │
+│     and a pill on the startup       │
+│     screen.                         │
+│                                     │
+│  3. Open Settings → Version below   │
+│     and click Update Now. The app   │
+│     reloads with the new version.   │
+│                                     │
+│  4. All your settings, snapshots,   │
+│     rules, and table data are       │
+│     never affected by updates.      │
+│                                     │
+│  ─────────────────────────────────  │
+│  If offline, updates queue until    │
+│  you reconnect.                     │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+---
+
+### 12.4 Data Preservation Rules
+
+**CRITICAL:** Version changes must NEVER affect user data
+
+**Preserved across updates:**
+- ✅ All settings snapshots (localStorage: `ce_shipgen_presets`)
+- ✅ Live working state (localStorage: `ce_shipgen_table_*`)
+- ✅ Rule preferences (localStorage: `ce_shipgen_rules`)
+- ✅ Layout preference (localStorage: `ce_shipgen_layout`)
+
+**Not preserved (app code only):**
+- ❌ version.json (regenerated each build)
+- ❌ Service worker cache (refreshed on update — old cache purged by Workbox)
+
+**Data migration:**
+- If new version requires data migration, `version.json` includes `minimumCompatibleVersion`
+- If current version < minimumCompatibleVersion: show warning "Your data is from an incompatible version. Some features may not work."
+- Auto-migrate data forward (never backward)
+
+---
+
+### 12.5 UI Mockup
+
+**Settings — full Version Control area (no update available):**
+
+```
+┌─────────────────────────────────────┐
+│ Updating                            │
+│ How app updates work                │
+├─────────────────────────────────────┤
+│  1. Updates download automatically  │
+│     in the background. You are      │
+│     never forced to update.         │
+│  2. When ready, an orange dot       │
+│     appears on the Settings icon    │
+│     and a pill on startup screen.   │
+│  3. Open Settings → Version below   │
+│     and click Update Now.           │
+│  4. All your data is never touched  │
+│     by updates.                     │
+│  ─────────────────────────────────  │
+│  If offline, updates queue until    │
+│  you reconnect.                     │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ Version                             │
+├─────────────────────────────────────┤
+│  Current Version                    │
+│  0.2.6 (stable)                     │
+│  Build: Mon, 03 Mar 2026 14:30 UTC  │
+└─────────────────────────────────────┘
+```
+
+**Settings → Version section (update available):**
+
+```
+┌─────────────────────────────────────┐
+│ Version                             │
+├─────────────────────────────────────┤
+│  Current Version                    │
+│  0.2.6 (stable)                     │
+│  Build: Mon, 03 Mar 2026 14:30 UTC  │
+│                                     │
+│  🟠 Update Available                │
+│  [View Changelog]  [Update Now]     │
+│  • M2.6: Version display…           │
+│  • User-controlled updates…         │
+└─────────────────────────────────────┘
+```
+
+**Startup screen (update available):**
+
+```
+Version 0.2.6 | M2.6: Version Control | M2.5 ✓
+[ 🔄 Update Available — Tap to Update ]
+```
+
+**Header (update available):**
+
+```
+CE ShipGen  [Installed ●]    [□] [+] [≡] [⚙●]
+                                           ↑ orange dot
+```
+
+---
+
+### 12.6 Acceptance Criteria
+
+**FR-026j — Updating Instructions Section:**
+- [x] "Updating" section is always visible in Settings regardless of update state
+- [x] Section is placed above the "Version" section
+- [x] All four steps are present: background download, indicator locations, how to apply, data safety guarantee
+- [x] Offline footnote is present at the bottom of the section
+- [x] Content is static — does not change based on `needRefresh` or online state
+
+**FR-026b — Version Section:**
+- [x] Current version displays in Settings → Version section
+- [x] Version, channel, and build timestamp (UTC) all shown
+- [x] Loading state shown while `version.json` is fetching
+- [x] "Version information unavailable" shown gracefully if fetch fails
+
+**FR-026c/e — Update Detection & Application:**
+- [x] `registerType: 'prompt'` — new SW waits, does not auto-activate
+- [x] `needRefresh` signal drives "Update Available" indicator (startup + header dot + settings banner)
+- [x] Changelog from `version.json` is viewable in Settings when update available
+- [x] "Update Now" calls `updateServiceWorker(true)` — correct SW activation + reload
+
+**FR-026h — Offline:**
+- [x] Offline: update button replaced with "Connect to internet to update" message
+- [x] Offline note in Updating Instructions section always visible
+
+**FR-026a/i — Build & Service Worker:**
+- [x] `version.json` is generated on every `npm run build` with correct metadata
+- [x] `version.json` excluded from precache; served via NetworkFirst runtimeCaching
+- [x] Build passes `tsc && vite build` with zero errors
+
+**Manual verification (requires live HTTPS + installed PWA):**
+- [ ] Update flow tested end-to-end on actual installed PWA
+
+**Descoped from M2.6:**
+- ~~Version History & Rollback (FR-026f)~~ — not achievable; old builds purged by Workbox on SW activation
+- ~~Release Channels (FR-026g)~~ — requires multi-channel CI/CD pipeline that doesn't exist yet
+
+---
+
+### 12.7 Implementation Notes
+
+**Build-time version.json generation (`scripts/write-version.mjs`):**
+```javascript
+import { writeFileSync, readFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const pkg = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'))
+
+const versionInfo = {
+  version: pkg.version,
+  buildTimestamp: new Date().toISOString(),
+  channel: process.env.RELEASE_CHANNEL || 'stable',
+  changelog: [ /* session-specific entries */ ],
+  minimumCompatibleVersion: '0.2.5'
+}
+
+writeFileSync(join(__dirname, '../public/version.json'), JSON.stringify(versionInfo, null, 2))
+```
+
+Run via `prebuild` in `package.json`: `"prebuild": "node scripts/write-version.mjs"`
+
+**useRegisterSW usage (App.tsx):**
+```typescript
+import { useRegisterSW } from 'virtual:pwa-register/react'
+
+const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
+// Pass needRefresh and updateServiceWorker as props to Header, StartupScreen, SettingsScreen
+```
+
+**vite.config.ts workbox config:**
+```typescript
+workbox: {
+  globPatterns: ['**/*.{js,css,html,ico,png,svg}'],  // no json
+  runtimeCaching: [{
+    urlPattern: /\/version\.json$/,
+    handler: 'NetworkFirst',
+    options: { cacheName: 'version-manifest', networkTimeoutSeconds: 3 }
+  }]
+}
+```
+
+**Key files added/changed in M2.6:**
+- `package.json` — version `0.2.6`, `prebuild` script
+- `scripts/write-version.mjs` — build-time version.json generator
+- `public/version.json` — generated artifact (committed as initial baseline)
+- `vite.config.ts` — `registerType: 'prompt'`, workbox runtimeCaching
+- `src/vite-env.d.ts` — `/// <reference types="vite-plugin-pwa/client" />`
+- `src/hooks/useVersionCheck.ts` — fetch version.json, return VersionInfo
+- `src/App.tsx` — useRegisterSW, pass props
+- `src/components/screens/StartupScreen.tsx` — Update Available pill
+- `src/components/screens/SettingsScreen.tsx` — "Updating" instructions section (FR-026j) + "Version" live-state section (FR-026b)
 
 ---
 
 **PRD Status:** LIVING DOCUMENT — updated per session
-**Last updated:** March 2, 2026 (Session 5 wrap-up)
-**Next implementation target:** M2.6 — Verify and fix Local signal (FR-021b) and Snapshots (FR-024) before M3
+**Last updated:** March 3, 2026 — M2.6 implemented (Session 6); FR-026f/g descoped with rationale
+**Next implementation target:** M3 — Ship Generation (19-step wizard, BOQ, real-time calculations)

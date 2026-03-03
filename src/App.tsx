@@ -1,5 +1,6 @@
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Smartphone, Monitor, Settings, Plus, Library } from 'lucide-react'
 import StartupScreen from './components/screens/StartupScreen'
 import SettingsScreen from './components/screens/SettingsScreen'
@@ -24,7 +25,15 @@ function LayoutToggle({ mode, onChange }: { mode: LayoutMode; onChange: (mode: L
   )
 }
 
-function Header({ layoutMode, setLayoutMode }: { layoutMode: LayoutMode; setLayoutMode: (m: LayoutMode) => void }) {
+function Header({
+  layoutMode,
+  setLayoutMode,
+  needRefresh
+}: {
+  layoutMode: LayoutMode
+  setLayoutMode: (m: LayoutMode) => void
+  needRefresh: boolean
+}) {
   const location = useLocation()
   const isStartup = location.pathname === '/'
   const [isOnline, setIsOnline] = useState(navigator.onLine)
@@ -85,10 +94,13 @@ function Header({ layoutMode, setLayoutMode }: { layoutMode: LayoutMode; setLayo
         </Link>
         <Link
           to="/settings"
-          className={`p-2 rounded-lg transition-colors ${location.pathname === '/settings' ? 'bg-accent-cyan text-space-900' : 'hover:bg-space-700'}`}
+          className={`relative p-2 rounded-lg transition-colors ${location.pathname === '/settings' ? 'bg-accent-cyan text-space-900' : 'hover:bg-space-700'}`}
           title="Settings"
         >
           <Settings size={20} />
+          {needRefresh && (
+            <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-accent-orange" />
+          )}
         </Link>
       </div>
     </header>
@@ -98,6 +110,8 @@ function Header({ layoutMode, setLayoutMode }: { layoutMode: LayoutMode; setLayo
 function App() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('desktop')
   const navigate = useNavigate()
+
+  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
 
   // Load saved layout preference
   useEffect(() => {
@@ -114,7 +128,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-space-900">
-      <Header layoutMode={layoutMode} setLayoutMode={setLayoutMode} />
+      <Header layoutMode={layoutMode} setLayoutMode={setLayoutMode} needRefresh={needRefresh} />
 
       <main className="h-[calc(100vh-3.5rem)]">
         <Routes>
@@ -125,6 +139,8 @@ function App() {
                 onGenerate={() => navigate('/design')}
                 onLibrary={() => navigate('/library')}
                 onSettings={() => navigate('/settings')}
+                needRefresh={needRefresh}
+                updateServiceWorker={updateServiceWorker}
               />
             }
           />
@@ -148,6 +164,8 @@ function App() {
                 layoutMode={layoutMode}
                 onLayoutChange={setLayoutMode}
                 onBack={() => navigate('/')}
+                needRefresh={needRefresh}
+                updateServiceWorker={updateServiceWorker}
               />
             }
           />

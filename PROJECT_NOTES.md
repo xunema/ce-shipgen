@@ -1714,3 +1714,123 @@ Changed line 329 in `JsonTableEditor.tsx`:
 *Files modified: 1 (JsonTableEditor.tsx line 329)*
 
 ---
+
+## Session 7 — March 3, 2026 (M2.6 Installed Version Control — Implementation)
+
+**Timestamp:** March 3, 2026
+**Agent:** Claude Sonnet 4.6
+**Status:** M2.6 Complete
+
+---
+
+### Context
+
+Session 7 opened with a PRD review of Kimi's M2.6 specification. The review identified critical issues before any code was written. Corrective instructions were documented, then implementation proceeded using the corrected approach.
+
+---
+
+### PRD Review Findings (Pre-Implementation)
+
+Five issues were identified in the M2.6 PRD as written by Kimi:
+
+**Issue 1 — FR-026f Rollback is non-functional (Critical)**
+The PRD described storing version metadata in localStorage and setting a `ce_shipgen_rollback_target` flag. The note "actual version loading is automatic via service worker cache" reveals the flaw: Workbox purges the old version's cache when a new SW activates. Old JS/CSS bundles are gone. Setting a localStorage flag shows a "rollback success" toast while serving the current version — a UI lie. **Descoped.**
+
+**Issue 2 — FR-026g Release Channels require non-existent infrastructure (Major)**
+The `version-beta.json` approach requires a separate CI/CD pipeline publishing beta builds to a distinct URL. No such pipeline exists. **Descoped.**
+
+**Issue 3 — FR-026e Update flow uses deprecated API (Major)**
+`window.location.reload(true)` is deprecated and does not activate a waiting service worker. The correct approach: call `updateServiceWorker(true)` from vite-plugin-pwa's `useRegisterSW` hook.
+
+**Issue 4 — FR-026c Dual update detection is redundant (Minor)**
+The PRD defined both a 30-minute `version.json` poll and a service worker `updatefound` listener. These are redundant. The SW's `needRefresh` signal from `useRegisterSW` is the authoritative update trigger. `version.json` is fetched only for changelog/metadata display.
+
+**Issue 5 — FR-026a version.json will be precached and stale (Minor)**
+`globPatterns: ['**/*.json']` precaches `version.json`, defeating cache-busting fetches. Fix: exclude JSON from globPatterns, add NetworkFirst runtimeCaching rule for `/version.json`.
+
+---
+
+### M2.6 Implementation Summary
+
+**Implemented (FR-026a through FR-026e, FR-026h, FR-026i):**
+
+All achievable requirements were implemented and the build passes with zero TypeScript errors.
+
+#### FR-026a: Version Manifest (build-time generation)
+- `scripts/write-version.mjs` — reads `package.json` version, writes `public/version.json` with version, buildTimestamp, channel, changelog, minimumCompatibleVersion
+- `package.json`: added `"prebuild": "node scripts/write-version.mjs"` — runs automatically before every build
+- `package.json`: version bumped `0.0.1` → `0.2.6`
+
+#### FR-026b: Version Display
+- `SettingsScreen.tsx`: new "Version" section at bottom using `useVersionCheck` hook
+- Shows: current version, channel, build timestamp (UTC)
+- Shows "Version information unavailable" gracefully if fetch fails
+
+#### FR-026c: Update Detection (SW-based)
+- `vite.config.ts`: `registerType: 'autoUpdate'` → `registerType: 'prompt'`
+- `App.tsx`: `useRegisterSW` from `virtual:pwa-register/react` — `needRefresh` state + `updateServiceWorker` function
+- `needRefresh` passed as prop to Header, StartupScreen, SettingsScreen
+
+#### FR-026d: Changelog Display
+- `SettingsScreen.tsx`: "View Changelog / Hide Changelog" toggle within Update Available banner
+- Renders `info.changelog` array from `version.json` as bullet list
+
+#### FR-026e: User-Controlled Update
+- "Update Now" calls `updateServiceWorker(true)` — posts SKIP_WAITING, listens for controllerchange, reloads
+- Never forced — only on user click
+
+#### FR-026h: Offline Behavior
+- `SettingsScreen.tsx`: tracks `isOnline` via `online`/`offline` event listeners
+- Offline: "Update Now" replaced with "Connect to internet to update" text
+- No update prompts when offline
+
+#### FR-026i: Service Worker Integration
+- `vite.config.ts`: `registerType: 'prompt'`
+- `vite.config.ts`: `globPatterns` removes `json`, adds `runtimeCaching` NetworkFirst for `/version.json`
+- `src/vite-env.d.ts`: `/// <reference types="vite-plugin-pwa/client" />` for useRegisterSW types
+- No manual `navigator.serviceWorker.register()` added — vite-plugin-pwa handles this via the hook
+
+#### Descoped from M2.6
+- **FR-026f (Rollback)** — old builds purged by Workbox on SW activation; no versioned URL hosting on GitHub Pages
+- **FR-026g (Release Channels)** — no multi-channel CI/CD pipeline exists
+
+---
+
+### Files Changed This Session
+
+| File | Change |
+|------|--------|
+| `package.json` | version `0.0.1` → `0.2.6`, added `prebuild` script |
+| `vite.config.ts` | `registerType: 'prompt'`, fixed globPatterns, added runtimeCaching |
+| `scripts/write-version.mjs` | NEW — build-time version.json generator |
+| `public/version.json` | NEW (generated) — initial version manifest |
+| `src/vite-env.d.ts` | Added `/// <reference types="vite-plugin-pwa/client" />` |
+| `src/hooks/useVersionCheck.ts` | NEW — fetches version.json, returns VersionInfo |
+| `src/App.tsx` | Added useRegisterSW, pass needRefresh + updateServiceWorker as props |
+| `src/components/screens/StartupScreen.tsx` | Added needRefresh prop + Update Available pill |
+| `src/components/screens/SettingsScreen.tsx` | Added Version Control section |
+| `PRD.md` | FR-026c/e/i corrected; FR-026f/g descoped with rationale; acceptance criteria updated; M2.6 marked complete |
+
+**Build result:** `npm run build` — zero TypeScript errors, zero warnings. Build output: `244.33 kB` JS (gzip: 74.56 kB).
+
+---
+
+### Milestone Table Update
+
+| Milestone | Status |
+|-----------|--------|
+| M1: UI Layout | ✅ Complete |
+| M2: Settings & Data Tables | ✅ Complete |
+| M2.5: Install UX & Settings System | ✅ Complete |
+| M2.6: Installed Version Control | ✅ Complete |
+| M3: Ship Generation | 🎯 Current |
+
+---
+
+*Session 7 notes written: March 3, 2026*
+*Session 7 duration: ~30 minutes*
+*Files created: 3 (scripts/write-version.mjs, public/version.json, src/hooks/useVersionCheck.ts)*
+*Files modified: 7 (package.json, vite.config.ts, vite-env.d.ts, App.tsx, StartupScreen.tsx, SettingsScreen.tsx, PRD.md)*
+*Next milestone: M3 — 19-step Ship Design Wizard, BOQ, real-time calculations*
+
+---

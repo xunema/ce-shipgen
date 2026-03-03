@@ -1,0 +1,12 @@
+{
+  "version": "0.2.6",
+  "buildTimestamp": "2026-03-03T10:09:10.466Z",
+  "channel": "stable",
+  "changelog": [
+    "M2.6: Version display in Settings",
+    "User-controlled PWA updates (not forced)",
+    "Update Available indicator on startup and header",
+    "Offline-aware update detection"
+  ],
+  "minimumCompatibleVersion": "0.2.5"
+}

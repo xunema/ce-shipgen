@@ -4,8 +4,24 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-brightgreen)](https://justinaquino.github.io/ce-shipgen/)
+[![Status](https://img.shields.io/badge/Status-M3%20Current-blue)](https://github.com/xunema/ce-shipgen#-milestone-status)
 
 **Live Demo:** https://justinaquino.github.io/ce-shipgen/
+
+---
+
+## 📊 Milestone Status
+
+| Milestone | Scope & Deliverables | Status |
+|-----------|----------------------|--------|
+| **M1: UI Layout & Tiling** | Tile-based layout system, focus mode, desktop/phone modes, PWA scaffolding, service worker, offline support | ✅ Complete |
+| **M2: Settings & Data Tables** | JSON editor + spreadsheet view for all 13 ship component tables, rule toggles (CE / Mneme / custom mix) | ✅ Complete |
+| **M2.5: Install UX & Settings System** | PWA install prompt + "Installed" badge (FR-021), auto-save table edits (FR-022), input sanitisation (FR-023), named settings snapshots save/load/export/import (FR-024), GitHub Actions CI/CD pipeline (FR-025) | ✅ Complete |
+| **M2.6: Installed Version Control** | Build-time `version.json` generation (FR-026a), version display in Settings (FR-026b), SW-based update detection — never forced (FR-026c), changelog viewer (FR-026d), user-controlled update via `updateServiceWorker` (FR-026e), offline guard (FR-026h), `registerType: prompt` SW integration (FR-026i), permanent Updating Instructions section in Settings (FR-026j) | ✅ Complete |
+| **M3: Ship Generation** | 19-step ship design wizard following CE Chapter 8, real-time BOQ (Bill of Quantities), tonnage/cost/crew/fuel calculations, validation | 🎯 Current |
+| **M4: Persistence & Export** | Ship library with save/load/delete, JSON / CSV / text / print export, common ship templates | ⏳ Pending |
+
+> **Descoped from M2.6:** Rollback (FR-026f) and Release Channels (FR-026g) require versioned URL hosting and a multi-channel CI/CD pipeline that do not yet exist on GitHub Pages. Deferred to a future milestone.
 
 ---
 
@@ -24,13 +40,18 @@ You are a Game Master trying to manage all the ships in your setting and accommo
 
 ## ✨ Features
 
-### Current (Milestone 2)
+### Current (M2.6 Complete ✅ — M3 Next)
 - **📱 Universal Access** - Works on desktop, tablet, and mobile via modern browser
 - **📊 Data Table Editor** - View and edit all 13 ship component tables (JSON + Spreadsheet views)
 - **⚙️ Rule Customization** - Toggle between Cepheus Engine, Mneme Space Combat, or mix your own rules
 - **🔄 Persistent Storage** - Save ships and settings to browser storage
 - **📤 Export/Import** - Share ship designs as JSON or CSV
 - **🔗 Shareable URLs** - Direct links to any view (/design, /library, /settings)
+- **📥 Install Prompt** - "Install App" button with "Installed" badge when running standalone
+- **📸 Settings Snapshots** - Save and share custom rule configurations
+
+### In Progress (Milestone 2.6)
+- **🔄 Version Control** - User-controlled updates with rollback capability
 
 ### Core Capabilities
 - **19-Step Ship Design** following Cepheus Engine Chapter 8 rules
@@ -97,6 +118,28 @@ Licensed under **GPL v3** - you can:
 ---
 
 ## 🛣️ Roadmap & Future Ideas
+
+### Milestone Progress
+
+See [📊 Milestone Status](#-milestone-status) at the top of this document for the full table.
+
+### M2.6: Installed Version Control (Complete ✅)
+
+**Problem solved:** Users with the PWA installed locally had no visibility into which version was running, and updates were applied automatically with no user control.
+
+**What was built:**
+- **Version Display** — Current version, channel, and build timestamp shown in Settings → Version section
+- **Update Detection** — Service worker monitors for new versions in the background; never forces an update
+- **Update Indicators** — Orange dot on Settings icon in header + amber pill on startup screen when update ready
+- **User-Controlled Update** — "Update Now" button applies the waiting service worker; user decides when
+- **Changelog Viewer** — Expandable changelog in Settings shows what changed before you update
+- **Updating Instructions** — Permanent Settings section explains the update model, indicators, data safety, and offline behaviour
+- **Offline Guard** — Update button replaced with "Connect to internet to update" when offline
+- **Build-time manifest** — `version.json` generated on every `npm run build` via `scripts/write-version.mjs`
+
+**Descoped (not achievable on GitHub Pages):**
+- ~~Version rollback~~ — Workbox purges old caches on SW activation; old code cannot be restored without versioned URL hosting
+- ~~Release channels (stable/beta)~~ — Requires a multi-channel CI/CD pipeline that does not yet exist
 
 ### Project Scope & Ecosystem
 
